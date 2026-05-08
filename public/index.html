@@ -140,25 +140,15 @@
           <p>Connect Google Calendar and configure auto-processing</p>
         </div>
 
-        <!-- Google Calendar -->
+        <!-- Google Calendar Accounts -->
         <div class="card">
-          <div class="card-title">Google Calendar</div>
-          <div id="google-status-section">
-            <div class="loading-pulse">Checking...</div>
-          </div>
-        </div>
-
-        <!-- Calendar Selection -->
-        <div class="card hidden" id="calendar-select-card">
-          <div class="card-title">Which Calendar?</div>
-          <p class="hint">Choose which Google Calendar to add events to. This calendar should be synced with your Skylight device.</p>
-          <div class="form-group">
-            <select id="calendar-select">
-              <option value="primary">Primary Calendar</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" id="save-calendar-btn">Save</button>
-          <span id="calendar-save-msg" class="hidden success-inline">Saved!</span>
+          <div class="card-title">Google Calendars</div>
+          <p class="hint">Events will be added to every connected account. Add as many as you like.</p>
+          <div id="accounts-list" style="margin-bottom:16px"></div>
+          <a href="/auth/google" class="btn btn-google">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="">
+            Add a Google account
+          </a>
         </div>
 
         <!-- Forward-to address -->

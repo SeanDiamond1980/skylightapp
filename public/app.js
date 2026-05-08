@@ -243,57 +243,35 @@ document.getElementById('add-form').addEventListener('submit', async (e) => {
 
 async function loadSetup() {
   if (!appStatus) await loadStatus();
-  renderGoogleSection();
-  renderCalendarSelect();
+  await renderAccountsList();
   renderGmailSection();
 }
 
-function renderGoogleSection() {
-  const section = document.getElementById('google-status-section');
-  if (appStatus?.googleAuthed) {
-    section.innerHTML = `
-      <div class="auth-ok">✅ Connected to Google Calendar</div>
-      <p class="hint" style="margin-top:8px">Re-connect to switch accounts: <a href="/auth/google" class="btn btn-google" style="display:inline-flex;padding:6px 14px;font-size:12px;margin-top:6px;">Reconnect Google</a></p>`;
-  } else {
-    section.innerHTML = `
-      <div class="auth-section">
-        <p>Connect your Google account so events can be added to your calendar.</p>
-        <a href="/auth/google" class="btn btn-google">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="">
-          Sign in with Google
-        </a>
-      </div>`;
+async function renderAccountsList() {
+  const container = document.getElementById('accounts-list');
+  const accounts = appStatus?.connectedAccounts || [];
+
+  if (accounts.length === 0) {
+    container.innerHTML = '<p class="hint">No accounts connected yet.</p>';
+    return;
   }
+
+  container.innerHTML = accounts.map(a => `
+    <div class="account-row" style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);margin-bottom:8px;">
+      <span style="font-size:20px">✅</span>
+      <span style="flex:1;font-weight:500">${escHtml(a.email)}</span>
+      <button class="btn btn-secondary" style="padding:5px 12px;font-size:12px" onclick="disconnectAccount('${escHtml(a.email)}')">Disconnect</button>
+    </div>
+  `).join('');
 }
 
-async function renderCalendarSelect() {
-  const card = document.getElementById('calendar-select-card');
-  if (!appStatus?.googleAuthed) { card.classList.add('hidden'); return; }
-
-  card.classList.remove('hidden');
-  const sel = document.getElementById('calendar-select');
-
-  if (appStatus.calendars?.length) {
-    sel.innerHTML = appStatus.calendars.map(c =>
-      `<option value="${escHtml(c.id)}" ${c.id === appStatus.calendarId ? 'selected' : ''}>${escHtml(c.summary)}</option>`
-    ).join('');
-  }
+async function disconnectAccount(email) {
+  if (!confirm(`Disconnect ${email}?`)) return;
+  await fetch(`/api/accounts/${encodeURIComponent(email)}`, { method: 'DELETE' });
+  await loadStatus();
+  await renderAccountsList();
+  toast(`${email} disconnected`);
 }
-
-document.getElementById('save-calendar-btn').addEventListener('click', async () => {
-  const calendarId = document.getElementById('calendar-select').value;
-  try {
-    await fetch('/api/settings/calendar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ calendarId })
-    });
-    const msg = document.getElementById('calendar-save-msg');
-    msg.classList.remove('hidden');
-    setTimeout(() => msg.classList.add('hidden'), 2000);
-    toast('Calendar saved!');
-  } catch { toast('Failed to save calendar.'); }
-});
 
 function renderGmailSection() {
   const el = document.getElementById('gmail-poll-status');

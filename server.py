@@ -7,7 +7,8 @@ load_dotenv()
 from flask import Flask, request, jsonify, redirect, send_from_directory
 
 from database import get_events, get_event, get_setting, set_setting
-from calendar_service import get_auth_url, exchange_code_for_tokens, is_authenticated, list_calendars
+from calendar_service import (get_auth_url, exchange_code_for_tokens, is_authenticated,
+                               list_calendars, get_connected_accounts, remove_account, set_account_calendar)
 from processor import process_email_payload
 from gmail_poller import poll_gmail
 
@@ -41,7 +42,8 @@ def auth_callback():
 
 @app.route('/api/status')
 def api_status():
-    google_authed = is_authenticated()
+    accounts = get_connected_accounts()
+    google_authed = len(accounts) > 0
     calendars = []
     if google_authed:
         try:
@@ -52,12 +54,30 @@ def api_status():
 
     return jsonify({
         'googleAuthed': google_authed,
+        'connectedAccounts': [{'email': a.get('email'), 'calendarId': a.get('calendar_id', 'primary')} for a in accounts],
         'calendars': calendars,
         'calendarId': os.environ.get('DEFAULT_CALENDAR_ID') or get_setting('calendar_id') or 'primary',
         'anthropicConfigured': bool(os.environ.get('ANTHROPIC_API_KEY')),
         'gmailPolling': bool(os.environ.get('GMAIL_USER') and os.environ.get('GMAIL_APP_PASSWORD')),
         'pollInterval': int(os.environ.get('POLL_INTERVAL_MINUTES', '5')),
     })
+
+@app.route('/api/accounts', methods=['GET'])
+def api_accounts():
+    accounts = get_connected_accounts()
+    return jsonify([{'email': a.get('email'), 'calendarId': a.get('calendar_id', 'primary')} for a in accounts])
+
+@app.route('/api/accounts/<path:email>', methods=['DELETE'])
+def api_remove_account(email):
+    remove_account(email)
+    return jsonify({'ok': True})
+
+@app.route('/api/accounts/<path:email>/calendar', methods=['POST'])
+def api_set_account_calendar(email):
+    data = request.get_json() or {}
+    calendar_id = data.get('calendarId', 'primary')
+    set_account_calendar(email, calendar_id)
+    return jsonify({'ok': True})
 
 @app.route('/api/events')
 def api_events():
