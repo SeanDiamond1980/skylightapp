@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: skylight-calendar-applet
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    healthCheckPath: /api/status
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: WEBHOOK_SECRET
+        sync: false
+      - key: DEFAULT_CALENDAR_ID
+        value: primary
+      - key: POLL_INTERVAL_MINUTES
+        value: "5"
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1

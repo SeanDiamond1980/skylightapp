@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skylight Calendar Applet</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🗓</div>
+        <div>
+          <div class="brand-name">Skylight</div>
+          <div class="brand-sub">Calendar Applet</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#" class="nav-item active" data-tab="dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="#" class="nav-item" data-tab="add">
+          <span class="nav-icon">➕</span> Add Event
+        </a>
+        <a href="#" class="nav-item" data-tab="history">
+          <span class="nav-icon">📋</span> History
+        </a>
+        <a href="#" class="nav-item" data-tab="setup">
+          <span class="nav-icon">⚙️</span> Setup
+        </a>
+      </nav>
+
+      <div class="sidebar-status" id="sidebar-status">
+        <div class="status-dot loading" id="status-dot"></div>
+        <span id="status-label">Checking...</span>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+      <!-- Dashboard Tab -->
+      <div class="tab active" id="tab-dashboard">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>Overview of your Skylight Calendar Applet</p>
+        </div>
+
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <div class="stat-num" id="stat-total">—</div>
+            <div class="stat-label">Total Events</div>
+          </div>
+          <div class="stat-card success">
+            <div class="stat-num" id="stat-added">—</div>
+            <div class="stat-label">Added to Calendar</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="stat-num" id="stat-errors">—</div>
+            <div class="stat-label">Errors</div>
+          </div>
+        </div>
+
+        <div class="card" id="setup-card" style="display:none">
+          <div class="card-title">🚀 Get Started</div>
+          <div class="setup-checklist" id="checklist"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Recent Activity</div>
+          <div id="recent-events" class="events-list">
+            <div class="empty">No events yet. Go to <strong>Add Event</strong> to get started.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Webhook URL</div>
+          <p class="hint">Forward emails via Mailgun, Postmark, or SendGrid to this URL:</p>
+          <div class="code-block" id="webhook-url"></div>
+          <p class="hint">Add header <code>X-Webhook-Secret: your_secret</code> if you've set <code>WEBHOOK_SECRET</code> in your .env.</p>
+        </div>
+      </div>
+
+      <!-- Add Event Tab -->
+      <div class="tab" id="tab-add">
+        <div class="page-header">
+          <h1>Add Event</h1>
+          <p>Paste or type email content and Claude will extract the event details</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Email Content</div>
+          <form id="add-form">
+            <div class="form-group">
+              <label>Subject <span class="optional">(optional)</span></label>
+              <input type="text" id="f-subject" placeholder="e.g. Dinner with the team — Friday 7pm">
+            </div>
+            <div class="form-group">
+              <label>From <span class="optional">(optional)</span></label>
+              <input type="text" id="f-from" placeholder="e.g. organizer@company.com">
+            </div>
+            <div class="form-group">
+              <label>Email Body <span class="required">*</span></label>
+              <textarea id="f-body" rows="10" placeholder="Paste the full email text here...&#10;&#10;Example:&#10;Hi! Just a reminder that Sarah's birthday party is on Saturday May 16th at 7pm.&#10;Location: 42 Oak Street, San Francisco&#10;Please RSVP by Thursday!"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" id="add-btn">
+              <span id="add-btn-text">✨ Parse & Add to Calendar</span>
+              <span id="add-spinner" class="spinner hidden"></span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Result panel -->
+        <div class="card hidden" id="result-card">
+          <div class="card-title">Result</div>
+          <div id="result-content"></div>
+        </div>
+      </div>
+
+      <!-- History Tab -->
+      <div class="tab" id="tab-history">
+        <div class="page-header">
+          <h1>Event History</h1>
+          <p>All events processed by the applet</p>
+        </div>
+        <div class="card">
+          <div id="history-list" class="events-list">
+            <div class="loading-pulse">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Setup Tab -->
+      <div class="tab" id="tab-setup">
+        <div class="page-header">
+          <h1>Setup</h1>
+          <p>Connect Google Calendar and configure auto-processing</p>
+        </div>
+
+        <!-- Google Calendar -->
+        <div class="card">
+          <div class="card-title">Google Calendar</div>
+          <div id="google-status-section">
+            <div class="loading-pulse">Checking...</div>
+          </div>
+        </div>
+
+        <!-- Calendar Selection -->
+        <div class="card hidden" id="calendar-select-card">
+          <div class="card-title">Which Calendar?</div>
+          <p class="hint">Choose which Google Calendar to add events to. This calendar should be synced with your Skylight device.</p>
+          <div class="form-group">
+            <select id="calendar-select">
+              <option value="primary">Primary Calendar</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="save-calendar-btn">Save</button>
+          <span id="calendar-save-msg" class="hidden success-inline">Saved!</span>
+        </div>
+
+        <!-- Forward-to address -->
+        <div class="card">
+          <div class="card-title">📬 Your Forward-To Address</div>
+          <p class="hint">Forward any event email to this address and it will automatically appear on your Skylight:</p>
+          <div class="code-block">seanandnicoleskylight@gmail.com</div>
+          <p class="hint">That's it. The app checks this inbox every 5 minutes for new emails and adds them to your calendar.</p>
+        </div>
+
+        <!-- Gmail polling status -->
+        <div class="card">
+          <div class="card-title">Gmail Polling</div>
+          <div id="gmail-poll-status" class="hint"></div>
+          <button class="btn btn-secondary" id="poll-now-btn" style="margin-top:10px">Check Now</button>
+          <p class="hint" style="margin-top:10px">To enable: add <code>GMAIL_USER</code> and <code>GMAIL_APP_PASSWORD</code> to your environment variables, then redeploy.<br>Get an App Password (not your real password) at <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a>.</p>
+        </div>
+
+        <!-- Skylight sync -->
+        <div class="card">
+          <div class="card-title">Skylight Sync Setup</div>
+          <ol class="instructions">
+            <li>Open the Skylight app on your phone</li>
+            <li>Go to <strong>Settings → Calendar Sources</strong></li>
+            <li>Tap <strong>Add Google Calendar</strong> and sign in with the same Google account you connected above</li>
+            <li>Select the calendar you chose above and tap <strong>Sync</strong></li>
+            <li>Events added by this applet will appear on your Skylight frame within minutes</li>
+          </ol>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>

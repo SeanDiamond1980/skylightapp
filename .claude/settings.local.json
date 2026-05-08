@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(python3 -m pip install -r requirements.txt)",
+      "Bash(python3 -c ' *)",
+      "Bash(ANTHROPIC_API_KEY=test GOOGLE_CLIENT_ID=test GOOGLE_CLIENT_SECRET=test python3 server.py)",
+      "Bash(curl -s http://localhost:3000/api/status)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s http://localhost:3000/api/events)",
+      "Bash(kill %1)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(python3 -m pip install gunicorn)",
+      "Bash(python3 -c \"import gunicorn; print\\('gunicorn', gunicorn.__version__, 'OK'\\)\")"
+    ]
+  }
+}
