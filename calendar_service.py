@@ -27,14 +27,14 @@ def _client_config():
         }
     }
 
-def get_auth_url() -> str:
+def get_auth_url() -> tuple:
     flow = Flow.from_client_config(
         _client_config(),
         scopes=SCOPES,
         redirect_uri=os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:3000/auth/callback')
     )
-    url, _ = flow.authorization_url(access_type='offline', prompt='consent')
-    return url
+    url, state = flow.authorization_url(access_type='offline', prompt='consent')
+    return url, state
 
 def _get_accounts() -> list:
     raw = get_setting('google_accounts')
@@ -43,11 +43,12 @@ def _get_accounts() -> list:
 def _save_accounts(accounts: list):
     set_setting('google_accounts', json.dumps(accounts))
 
-def exchange_code_for_tokens(code: str) -> dict:
+def exchange_code_for_tokens(code: str, state: str = None) -> dict:
     flow = Flow.from_client_config(
         _client_config(),
         scopes=SCOPES,
-        redirect_uri=os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:3000/auth/callback')
+        redirect_uri=os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:3000/auth/callback'),
+        state=state
     )
     flow.fetch_token(code=code)
     creds = flow.credentials

@@ -13,7 +13,9 @@
       "Bash(python3 -m pip install gunicorn)",
       "Bash(python3 -c \"import gunicorn; print\\('gunicorn', gunicorn.__version__, 'OK'\\)\")",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(python3 -c \"import secrets; print\\(secrets.token_hex\\(32\\)\\)\")"
     ]
   }
 }

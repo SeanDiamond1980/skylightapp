@@ -4,7 +4,7 @@ import time
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, request, jsonify, redirect, send_from_directory
+from flask import Flask, request, jsonify, redirect, send_from_directory, session
 
 from database import get_events, get_event, get_setting, set_setting
 from calendar_service import (get_auth_url, exchange_code_for_tokens, is_authenticated,
@@ -13,6 +13,7 @@ from processor import process_email_payload
 from gmail_poller import poll_gmail
 
 app = Flask(__name__, static_folder='public', static_url_path='')
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
 
 # ── Static / index ────────────────────────────────────────────────────────────
 
@@ -24,7 +25,9 @@ def index():
 
 @app.route('/auth/google')
 def auth_google():
-    return redirect(get_auth_url())
+    url, state = get_auth_url()
+    session['oauth_state'] = state
+    return redirect(url)
 
 @app.route('/auth/callback')
 def auth_callback():
@@ -32,8 +35,9 @@ def auth_callback():
     if error:
         return redirect(f'/?auth=error&reason={error}')
     code = request.args.get('code')
+    state = request.args.get('state')
     try:
-        exchange_code_for_tokens(code)
+        exchange_code_for_tokens(code, state=state)
         return redirect('/?auth=success')
     except Exception as e:
         return redirect(f'/?auth=error&reason={str(e)}')
